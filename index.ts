@@ -1,7 +1,11 @@
 import express, { Application } from "express";
 import dotenv from "dotenv";
-import routes from "./controllers/demoController";
-import client from "./db/db";
+const db = require ("./db/db")
+import restaurantRoutes from "./controllers/restaurantController";
+import dishesRoutes from "./controllers/dishesController";
+import orderRoutes from "./controllers/orderContoller";
+import ratingRoutes from "./controllers/ratingsController"
+
 
 //For env File
 dotenv.config();
@@ -9,14 +13,29 @@ dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 8000;
 
-app.use("/", routes);
+app.get("/", (req, res) => {
+  res.send("Welcome");
+});
+
+app.use(express.json())
+
+app.use("/restaurants/:id/dishes", dishesRoutes);
+app.use("/restaurants", restaurantRoutes);
+app.use("/order", orderRoutes);
+app.use("/ratings", ratingRoutes);
+
 
 app.listen(port, () => {
   console.log(`Server is On at http://localhost:${port}`);
 });
 
+app.use(function (err, req, res, next) {
+  console.error(err);
+  res.status(err.status || 500).send(err.message);
+});
+
 process.on("SIGINT", () => {
-  client.end((err: Error) => {
+  db.client.end((err: Error) => {
     if (err) {
       console.error("error during disconnection", err.stack);
     }
@@ -25,7 +44,7 @@ process.on("SIGINT", () => {
 });
 
 process.on("SIGTERM", () => {
-  client.end((err: Error) => {
+  db.client.end((err: Error) => {
     if (err) {
       console.error("error during disconnection", err.stack);
     }
